@@ -433,7 +433,7 @@ pub async fn get_earning_history(Query(params): Query<QueryParams>) -> Json<serd
                 query.push_str(" ORDER BY ei.end_time DESC");
             }
 
-            let limit = params.limit.unwrap_or(27);
+            let limit = params.limit.unwrap_or(100);
             let page = params.page.unwrap_or(1);
             let offset = (page - 1) * limit;
             query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
