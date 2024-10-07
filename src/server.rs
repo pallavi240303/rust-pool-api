@@ -1,9 +1,10 @@
 use axum::{routing::get, Router};
 use std::net::SocketAddr;
 
-use crate::api::{get_depth_history, get_earning_history, get_rune_pool_history, get_swaps_history};
+use crate::api::{get_depth_history, get_earning_history, get_rune_pool_history, get_swaps_history, show_homepage};
 pub async fn start_server() {
-    let app = Router::new()
+    let app = Router::new()  
+        .route("/", get(show_homepage))
         .route("/depth", get(get_depth_history))
         .route("/swap",get(get_swaps_history))
         .route("/earnings",get(get_earning_history))

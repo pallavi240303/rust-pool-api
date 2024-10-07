@@ -1,4 +1,4 @@
-use axum::{extract::Query, Json};
+use axum::{extract::Query, response::Html, Json};
 use serde::Deserialize;
 use serde_json::json;
 use crate::{db::establish_connection, model::{EarningInterval, Pool, RunePoolInterval, SwapsInterval}}; 
@@ -13,6 +13,10 @@ pub struct QueryParams {
     order: Option<String>, 
     pool: Option<String>,      
     interval: Option<String> 
+}
+
+pub async fn show_homepage() -> Html<&'static str> {
+    Html("<h1>Welcome to Midgard API Fetcher</h1><p>Use the API endpoints: /depth, /swap, /earnings, /rune</p>")
 }
 
 pub async fn get_depth_history(Query(params): Query<QueryParams>) -> Json<serde_json::Value> {
