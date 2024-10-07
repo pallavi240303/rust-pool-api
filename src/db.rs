@@ -1,16 +1,29 @@
 
-use postgres_native_tls::{MakeTlsConnector};
-use tokio_postgres::{ tls::MakeTlsConnect, Client, Connection, Error, NoTls, Socket};
+use postgres_native_tls::MakeTlsConnector;
+use tokio_postgres::{Client, Error};
 use crate::model::{DepthInterval,EarningInterval,Pool,RunePoolInterval,SwapsInterval};
 use reqwest::Error as ReqwestError;
 use tokio_postgres::Error as PostgresError;
 use std::fmt;
-use native_tls::{Certificate, TlsConnector};
+use native_tls::TlsConnector;
+use thiserror::Error;
 
 #[derive(Debug)]
 pub enum AppError {
     Reqwest(ReqwestError),
     Postgres(PostgresError),
+}
+
+#[derive(Error, Debug)]
+pub enum MyError {
+    #[error("Request error: {0}")]
+    Reqwest(#[from] reqwest::Error),
+
+    #[error("Database error: {0}")]
+    Postgres(#[from] tokio_postgres::Error),
+
+    #[error("Serialization error: {0}")]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 impl fmt::Display for AppError {
@@ -81,19 +94,37 @@ pub async fn fetch_swaps_data(from: i32, count: i32) -> Vec<SwapsInterval> {
     return output_vec;
 }
 
-pub async fn fetch_earnings_data(from: i32,count: i32) -> Vec<EarningInterval>{
+pub async fn fetch_earnings_data(from: i32, count: i32) -> Vec<EarningInterval> {
     let url = format!(
         "https://midgard.ninerealms.com/v2/history/earnings?interval=hour&count={}&from={}",
-        count,from
+        count, from
     );
     println!("Fetching earnings from URL: {}", url);
-    let response: serde_json::Value = reqwest::get(&url)
-        .await.unwrap()
-        .json()
-        .await.unwrap();
-    let output_vec: Vec<EarningInterval> = serde_json::from_value(response["intervals"].to_owned()).unwrap();
-    return output_vec;
+
+    let response = match reqwest::get(&url).await {
+        Ok(resp) => resp,
+        Err(err) => {
+            eprintln!("Error fetching data from the URL: {}", err);
+            return Vec::new(); 
+        }
+    };
+
+    let json_response: serde_json::Value = match response.json().await {
+        Ok(json) => json,
+        Err(err) => {
+            eprintln!("Error parsing response JSON: {}", err);
+            return Vec::new();
+        }
+    };
+    match serde_json::from_value(json_response["intervals"].to_owned()) {
+        Ok(output_vec) => output_vec,
+        Err(err) => {
+            eprintln!("Error deserializing JSON into Vec<EarningInterval>: {}", err);
+            Vec::new() 
+        }
+    }
 }
+
 
 pub async fn fetch_runepool_data(from: i32, count: i32) -> Vec<RunePoolInterval>{
     let url = format!(

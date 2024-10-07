@@ -59,11 +59,9 @@ pub async fn get_depth_history(Query(params): Query<QueryParams>) -> Json<serde_
                 query.push_str(&filters.join(" AND "));
             }
 
-            // Determine sort order
-            let sort_by = params.sort_by.as_deref().unwrap_or("end_time"); // Default to end_time if no sort_by is provided
+            let sort_by = params.sort_by.as_deref().unwrap_or("end_time"); 
             let order = params.order.as_deref().unwrap_or("DESC");
 
-            // Add ordering logic
             if let Some(interval) = &params.interval {
                 match interval.as_str() {
                     "day" => {
@@ -86,7 +84,6 @@ pub async fn get_depth_history(Query(params): Query<QueryParams>) -> Json<serde_
                 query.push_str(&format!(" ORDER BY {} {}", sort_by, order));
             }
 
-            // Pagination
             let limit = params.limit.unwrap_or(400); 
             let page = params.page.unwrap_or(1); 
             let offset = (page - 1) * limit; 
@@ -129,7 +126,6 @@ pub async fn get_swaps_history(Query(params): Query<QueryParams>) -> Json<serde_
         Ok(client) => {
             let mut query = String::new();
 
-            // Handle interval logic
             if let Some(interval) = &params.interval {
                 match interval.as_str() {
                     "day" => {
@@ -154,7 +150,6 @@ pub async fn get_swaps_history(Query(params): Query<QueryParams>) -> Json<serde_
 
             let mut filters = Vec::new();
 
-            // Handle date filters
             if let Some(start_time) = &params.start_time {
                 filters.push(format!("start_time >= '{}'", start_time)); 
             }
@@ -162,14 +157,12 @@ pub async fn get_swaps_history(Query(params): Query<QueryParams>) -> Json<serde_
                 filters.push(format!("end_time <= '{}'", end_time)); 
             }
 
-            // Add filters to the query
             if !filters.is_empty() {
                 query.push_str(" WHERE ");
                 query.push_str(&filters.join(" AND "));
             }
 
-            // Handle sorting
-            let sort_column = params.sort_by.as_deref().unwrap_or("end_time"); // Default to end_time if no sort_by is provided
+            let sort_column = params.sort_by.as_deref().unwrap_or("end_time"); 
             let order = params.order.as_deref().unwrap_or("DESC");
 
             if let Some(interval) = &params.interval {
@@ -206,7 +199,6 @@ pub async fn get_swaps_history(Query(params): Query<QueryParams>) -> Json<serde_
                 query.push_str(&format!(" ORDER BY {} {}", sort_column, order));
             }
 
-            // Handle pagination
             let limit = params.limit.unwrap_or(400);
             let page = params.page.unwrap_or(1);
             let offset = (page - 1) * limit;
@@ -214,10 +206,8 @@ pub async fn get_swaps_history(Query(params): Query<QueryParams>) -> Json<serde_
 
             println!("Generated SQL Query: {}", query);
 
-            // Execute the query
             let rows = client.query(&query, &[]).await.unwrap();
 
-            // Map rows to intervals
             let intervals: Vec<SwapsInterval> = rows.iter().map(|row| {
                 SwapsInterval {
                     average_slip: row.get("average_slip"),
@@ -273,7 +263,6 @@ pub async fn get_rune_pool_history(Query(params): Query<QueryParams>) -> Json<se
         Ok(client) => {
             let mut query = String::new();
 
-            // Handle interval logic
             if let Some(interval) = &params.interval {
                 match interval.as_str() {
                     "day" => {
@@ -298,7 +287,6 @@ pub async fn get_rune_pool_history(Query(params): Query<QueryParams>) -> Json<se
 
             let mut filters = Vec::new();
 
-            // Handle filters for start_time and end_time
             if let Some(start_time) = &params.start_time {
                 filters.push(format!("start_time >= '{}'", start_time)); 
             }
@@ -311,11 +299,9 @@ pub async fn get_rune_pool_history(Query(params): Query<QueryParams>) -> Json<se
                 query.push_str(&filters.join(" AND "));
             }
 
-            // Handle sorting
-            let sort_column = params.sort_by.as_deref().unwrap_or("end_time"); // Default to end_time if no sort_by is provided
-            let order = params.order.as_deref().unwrap_or("DESC"); // Default to DESC if no order is provided
+            let sort_column = params.sort_by.as_deref().unwrap_or("end_time"); 
+            let order = params.order.as_deref().unwrap_or("DESC"); 
 
-            // Check for interval and adjust ORDER BY clause
             if let Some(interval) = &params.interval {
                 match interval.as_str() {
                     "day" => {
@@ -347,11 +333,9 @@ pub async fn get_rune_pool_history(Query(params): Query<QueryParams>) -> Json<se
                     }
                 }
             } else {
-                // Default to ordering by the provided column or end_time
                 query.push_str(&format!(" ORDER BY {} {}", sort_column, order));
             }
 
-            // Handle pagination
             let limit = params.limit.unwrap_or(400); 
             let page = params.page.unwrap_or(1); 
             let offset = (page - 1) * limit; 
@@ -430,9 +414,8 @@ pub async fn get_earning_history(Query(params): Query<QueryParams>) -> Json<serd
             }
 
             if let Some(sort_by) = &params.sort_by {
-                let order = params.order.as_deref().unwrap_or("DESC"); // Default to ASC if no order is specified
+                let order = params.order.as_deref().unwrap_or("DESC"); 
             
-                // Ensure sort_by is a valid column, otherwise use a default column (e.g., ei.end_time)
                 let valid_sort_by = match sort_by.as_str() {
                     "start_time" => "ei.start_time",
                     "end_time" => "ei.end_time",
@@ -443,7 +426,6 @@ pub async fn get_earning_history(Query(params): Query<QueryParams>) -> Json<serd
             
                 query.push_str(&format!(" ORDER BY {} {}", valid_sort_by, order));
             } else {
-                // Default to sorting by end_time in descending order if no sort_by is provided
                 query.push_str(" ORDER BY ei.end_time DESC");
             }
 
