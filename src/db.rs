@@ -67,32 +67,71 @@ pub async fn establish_connection() -> Result<Client, Error> {
     Ok(client)
 }
 
-pub async fn fetch_depth_data(from:i32,count:i32) -> Vec<DepthInterval> {
+pub async fn fetch_depth_data(from: i32, count: i32) -> Vec<DepthInterval> {
     let url = format!(
-        "https://midgard.ninerealms.com/v2/history/depths/BTC.BTC?interval=hour&count={}&from={}",count,from
+        "https://midgard.ninerealms.com/v2/history/depths/BTC.BTC?interval=hour&count={}&from={}",
+        count, from
     );
-    println!("Fetching depth from URL: {}", url);
-    let response: serde_json::Value = reqwest::get(&url)
-        .await.unwrap()
-        .json()
-        .await.unwrap();
-    let output_vec: Vec<DepthInterval> = serde_json::from_value(response["intervals"].to_owned()).unwrap();
-    return output_vec;
+    println!("Fetching depth data from URL: {}", url);
+
+    let response = match reqwest::get(&url).await {
+        Ok(resp) => resp,
+        Err(err) => {
+            println!("Error fetching depth data from URL: {}", err);
+            return Vec::new();
+        }
+    };
+
+    let json_response: serde_json::Value = match response.json().await {
+        Ok(json) => json,
+        Err(err) => {
+            println!("Error parsing depth response JSON: {}", err);
+            return Vec::new();
+        }
+    };
+
+    match serde_json::from_value(json_response["intervals"].to_owned()) {
+        Ok(output_vec) => output_vec,
+        Err(err) => {
+            println!("Error deserializing depth data: {}", err);
+            Vec::new() 
+        }
+    }
 }
+
 
 pub async fn fetch_swaps_data(from: i32, count: i32) -> Vec<SwapsInterval> {
     let url = format!(
         "https://midgard.ninerealms.com/v2/history/swaps?interval=hour&count={}&from={}",
         count, from
     );
-    println!("Fetching swaps from URL: {}", url);
-    let response: serde_json::Value = reqwest::get(&url)
-        .await.unwrap()
-        .json()
-        .await.unwrap();
-    let output_vec: Vec<SwapsInterval> = serde_json::from_value(response["intervals"].to_owned()).unwrap();
-    return output_vec;
+    println!("Fetching swaps data from URL: {}", url);
+
+    let response = match reqwest::get(&url).await {
+        Ok(resp) => resp,
+        Err(err) => {
+            println!("Error fetching swaps data from URL: {}", err);
+            return Vec::new();
+        }
+    };
+
+    let json_response: serde_json::Value = match response.json().await {
+        Ok(json) => json,
+        Err(err) => {
+            println!("Error parsing swaps response JSON: {}", err);
+            return Vec::new(); 
+        }
+    };
+
+    match serde_json::from_value(json_response["intervals"].to_owned()) {
+        Ok(output_vec) => output_vec,
+        Err(err) => {
+            println!("Error deserializing swaps data: {}", err);
+            Vec::new()
+        }
+    }
 }
+
 
 pub async fn fetch_earnings_data(from: i32, count: i32) -> Vec<EarningInterval> {
     let url = format!(
@@ -104,7 +143,7 @@ pub async fn fetch_earnings_data(from: i32, count: i32) -> Vec<EarningInterval> 
     let response = match reqwest::get(&url).await {
         Ok(resp) => resp,
         Err(err) => {
-            eprintln!("Error fetching data from the URL: {}", err);
+            println!("Error fetching data from the URL: {}", err);
             return Vec::new(); 
         }
     };
@@ -112,33 +151,52 @@ pub async fn fetch_earnings_data(from: i32, count: i32) -> Vec<EarningInterval> 
     let json_response: serde_json::Value = match response.json().await {
         Ok(json) => json,
         Err(err) => {
-            eprintln!("Error parsing response JSON: {}", err);
+            println!("Error parsing response JSON: {}", err);
             return Vec::new();
         }
     };
     match serde_json::from_value(json_response["intervals"].to_owned()) {
         Ok(output_vec) => output_vec,
         Err(err) => {
-            eprintln!("Error deserializing JSON into Vec<EarningInterval>: {}", err);
+            println!("Error deserializing JSON into Vec<EarningInterval>: {}", err);
             Vec::new() 
         }
     }
 }
 
 
-pub async fn fetch_runepool_data(from: i32, count: i32) -> Vec<RunePoolInterval>{
+pub async fn fetch_runepool_data(from: i32, count: i32) -> Vec<RunePoolInterval> {
     let url = format!(
         "https://midgard.ninerealms.com/v2/history/runepool?interval=hour&count={}&from={}",
         count, from
     );
-    println!("Fetching rune from URL: {}", url);
-    let response: serde_json::Value = reqwest::get(&url)
-        .await.unwrap()
-        .json()
-        .await.unwrap();
-    let output_vec: Vec<RunePoolInterval> = serde_json::from_value(response["intervals"].to_owned()).unwrap();
-    return output_vec;
+    println!("Fetching rune pool data from URL: {}", url);
+
+    let response = match reqwest::get(&url).await {
+        Ok(resp) => resp,
+        Err(err) => {
+            println!("Error fetching rune pool data from URL: {}", err);
+            return Vec::new(); 
+        }
+    };
+
+    let json_response: serde_json::Value = match response.json().await {
+        Ok(json) => json,
+        Err(err) => {
+            println!("Error parsing rune pool response JSON: {}", err);
+            return Vec::new(); 
+        }
+    };
+
+    match serde_json::from_value(json_response["intervals"].to_owned()) {
+        Ok(output_vec) => output_vec,
+        Err(err) => {
+            println!("Error deserializing rune pool data: {}", err);
+            Vec::new() 
+        }
+    }
 }
+
 
 pub async fn insert_depth_interval(client: &Client, depth: &DepthInterval) -> Result<(), Error> {
     client.execute(
